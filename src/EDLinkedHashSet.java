@@ -111,10 +111,17 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
     @SuppressWarnings("unchecked")
     public EDLinkedHashSet(int capacity, double loadFactor) {
-        //TODO Ejercicio 1
-        //la tabla se crea con new EDLinkedHashSet.Node[tamaño]
-        throw new UnsupportedOperationException("Ejercicio 1: por implementar");
 
+       if (capacity == 0 || loadFactor == 0) {
+           throw new IllegalArgumentException("Capacidad o factor de carga inválidos");
+       }
+       this.loadFactor = loadFactor;
+       this.rehashThreshold = (int) (capacity * loadFactor);
+       this.table = new EDLinkedHashSet.Node[capacity];
+
+       this.header = new Node();
+       this.header.next = this.header;
+       this.header.prev = this.header;
     }
 
     // ------------------------------------------------------------------
@@ -122,14 +129,18 @@ public class EDLinkedHashSet<T> implements Set<T> {
     // ------------------------------------------------------------------
 
     private void linkLast(Node n) {
-        //TODO Ejercicio 2
-        throw new UnsupportedOperationException("Ejercicio 2: por implementar");
-
+        Node last = this.header.prev;
+        n.prev = last;
+        n.next = this.header;
+        last.next = n;
+        this.header.prev = n;
     }
 
     private void unlink(Node n) {
-        //TODO Ejercicio 2
-        throw new UnsupportedOperationException("Ejercicio 2: por implementar");
+       n.prev.next = n.next;
+       n.next.prev = n.prev;
+       n.prev = null;
+       n.next = null;
     }
 
     // ------------------------------------------------------------------
@@ -137,8 +148,16 @@ public class EDLinkedHashSet<T> implements Set<T> {
     // ------------------------------------------------------------------
 
     private Node findNode(Object item) {
-        //TODO Ejercicio 3
-        throw new UnsupportedOperationException("Ejercicio 3: por implementar");
+        int indice = hash(item);
+        Node actual = table[indice];
+
+        while(actual != null) {
+            if (equalsNull(item, actual.data)) {
+                return actual;
+            }
+            actual = actual.next;
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------
@@ -147,8 +166,7 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
     @Override
     public boolean contains(Object item) {
-        //TODO Ejercicio 4
-        throw new UnsupportedOperationException("Ejercicio 4: por implementar");
+        return findNode(item) != null;
     }
 
     // ------------------------------------------------------------------
@@ -157,8 +175,20 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
     @Override
     public boolean add(T item) {
-        //TODO Ejercicio 5
-        throw new UnsupportedOperationException("Ejercicio 5: por implementar");
+        if (contains(item)) {
+            return false;
+        }
+        int indice = hash(item);
+        Node aux = new Node();
+        aux.data = item;
+        aux.hnext  = table[indice];
+        table[indice] = aux;
+        linkLast(aux);
+        this.size++;
+        if (size > rehashThreshold) {
+            rehash();
+        }
+        return true;
     }
 
     // ------------------------------------------------------------------
@@ -167,8 +197,18 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
     @SuppressWarnings("unchecked")
     private void rehash() {
-        //TODO Ejercicio 6
-        throw new UnsupportedOperationException("Ejercicio 6: por implementar");
+        int newCapacity = (table.length * 2) + 1;
+        table = new EDLinkedHashSet.Node[newCapacity];
+        this.rehashThreshold = (int) (newCapacity * this.loadFactor);
+
+        Node actual = this.header.next;
+
+        while(actual != header) {
+            int indice = hash(actual.data);
+            actual.hnext = table[indice];
+            table[indice] = actual;
+            actual = actual.next;
+        }
     }
 
     // ------------------------------------------------------------------
@@ -177,8 +217,21 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
     @Override
     public boolean remove(Object item) {
-        //TODO Ejercicio 7
-        throw new UnsupportedOperationException("Ejercicio 7: por implementar");
+        if (! contains(item)) {
+            return false;
+        }
+        int indice = hash(item);
+        Node actual = table[indice];
+        while (actual != null) {
+            if (equalsNull(item, actual.data)) {
+                if (actual == table[indice]) {
+                    table[indice] = actual.hnext;
+                }
+            }
+            actual = actual.next;
+        }
+
+        return true;
     }
 
     // ------------------------------------------------------------------
