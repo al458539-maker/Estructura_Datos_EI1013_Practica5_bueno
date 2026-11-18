@@ -112,7 +112,7 @@ public class EDLinkedHashSet<T> implements Set<T> {
     @SuppressWarnings("unchecked")
     public EDLinkedHashSet(int capacity, double loadFactor) {
 
-       if (capacity == 0 || loadFactor == 0) {
+       if (capacity <= 0 || loadFactor <= 0) {
            throw new IllegalArgumentException("Capacidad o factor de carga inválidos");
        }
        this.loadFactor = loadFactor;
@@ -155,7 +155,7 @@ public class EDLinkedHashSet<T> implements Set<T> {
             if (equalsNull(item, actual.data)) {
                 return actual;
             }
-            actual = actual.next;
+            actual = actual.hnext;
         }
         return null;
     }
@@ -217,21 +217,26 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
     @Override
     public boolean remove(Object item) {
-        if (! contains(item)) {
-            return false;
-        }
         int indice = hash(item);
         Node actual = table[indice];
+        Node prevCubeta = null;
         while (actual != null) {
             if (equalsNull(item, actual.data)) {
-                if (actual == table[indice]) {
+                if (prevCubeta == null) {
                     table[indice] = actual.hnext;
+                } else {
+                    prevCubeta.hnext = actual.hnext;
                 }
+                unlink(actual);
+                size--;
+                return true;
             }
-            actual = actual.next;
-        }
+            prevCubeta = actual;
+            actual = actual.hnext;
 
-        return true;
+
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------
@@ -240,8 +245,12 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
     @Override
     public void clear() {
-        //TODO Ejercicio 8
-        throw new UnsupportedOperationException("Ejercicio 8: por implementar");
+        for (int i = 0; i < table.length; i++) {
+            table[i] = null;
+        }
+        this.header.next = this.header;
+        this.header.prev = this.header;
+        this.size = 0;
     }
 
     // ------------------------------------------------------------------
@@ -254,15 +263,17 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
         @Override
         public boolean hasNext() {
-            //TODO Ejercicio 9
-            throw new UnsupportedOperationException("Ejercicio 9: por implementar");
+            return current != header;
         }
 
         @Override
         public T next() {
-            //TODO Ejercicio 9
-            //Debe actualizar lastReturned para que lo use remove
-            throw new UnsupportedOperationException("Ejercicio 9: por implementar");
+            if (! hasNext()) {
+                throw new NoSuchElementException();
+            }
+            lastReturned = current;
+            current = current.next;
+            return lastReturned.data;
         }
 
         @Override
@@ -285,8 +296,12 @@ public class EDLinkedHashSet<T> implements Set<T> {
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        //TODO Ejercicio 10
-        throw new UnsupportedOperationException("Ejercicio 10: por implementar");
+        for (Object elem : c) {
+            if (!contains(elem)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // ------------------------------------------------------------------
@@ -294,7 +309,15 @@ public class EDLinkedHashSet<T> implements Set<T> {
     // ------------------------------------------------------------------
     @Override
     public boolean retainAll(Collection<?> c) {
-        //TODO Ejercicio 11
-        throw new UnsupportedOperationException("Ejercicio 11: por implementar");
+        boolean modi = false;
+        Iterator<T> it = iterator();
+        while(it.hasNext()) {
+            T elem = it.next();
+           if (! c.contains(elem)) {
+               it.remove();
+               modi = true;
+           }
+       }
+       return modi;
     }
 }
